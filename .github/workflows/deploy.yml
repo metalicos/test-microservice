@@ -43,21 +43,21 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      # Build and push Docker image to ECR
-      - name: Build and push Docker image
-        run: |
-          IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/test-microservice:latest
-          docker build -t $IMAGE_URI .
-          docker push $IMAGE_URI
-
-      # Deploy to ECS
-      - name: Deploy to Amazon ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: task-definition.json
-          service: spring-boot-app-service
-          cluster: spring-boot-app-cluster
-          wait-for-service-stability: true
+#      # Build and push Docker image to ECR
+#      - name: Build and push Docker image
+#        run: |
+#          IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/test-microservice:latest
+#          docker build -t $IMAGE_URI .
+#          docker push $IMAGE_URI
+#
+#      # Deploy to ECS
+#      - name: Deploy to Amazon ECS
+#        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+#        with:
+#          task-definition: task-definition.json
+#          service: spring-boot-app-service
+#          cluster: spring-boot-app-cluster
+#          wait-for-service-stability: true
 
       # Terraform apply (optional)
       - name: Terraform apply
