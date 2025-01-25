@@ -1,0 +1,62 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up JDK 21
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      # Cache Gradle dependencies
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # Build the application using Gradle
+      - name: Build with Gradle
+        run: ./gradlew clean build
+
+      # Log in to Amazon ECR
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # Build and push Docker image to ECR
+      - name: Build and push Docker image
+        run: |
+          IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/test-microservice:latest
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
+
+      # Deploy to ECS
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          service: spring-boot-app-service
+          cluster: spring-boot-app-cluster
+          wait-for-service-stability: true
+
+      # Terraform apply (optional)
+      - name: Terraform apply
+        run: |
+          terraform init
+          terraform apply -auto-approve
